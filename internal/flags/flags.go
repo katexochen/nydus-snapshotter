@@ -19,6 +19,7 @@ type Args struct {
 	RootDir               string
 	NydusdPath            string
 	NydusImagePath        string
+	NydusOverlayfsName    string
 	DaemonMode            string
 	FsDriver              string
 	LogLevel              string
@@ -67,6 +68,11 @@ func buildFlags(args *Args) []cli.Flag {
 			Usage:       "path to nydusd configuration (such as: nydusd-config.json or nydusd-config-v2.toml)",
 			Destination: &args.NydusdConfigPath,
 			DefaultText: constant.DefaultNydusDaemonConfigPath,
+		},
+		&cli.StringFlag{
+			Name:        "nydus-overlayfs-name",
+			Usage:       "name of the nydus-overlayfs mount helper, defaults to 'nydus-overlayfs'",
+			Destination: &args.NydusOverlayfsName,
 		},
 		&cli.StringFlag{
 			Name:        "daemon-mode",

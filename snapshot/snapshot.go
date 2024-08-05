@@ -49,15 +49,16 @@ import (
 var _ snapshots.Snapshotter = &snapshotter{}
 
 type snapshotter struct {
-	root                 string
-	nydusdPath           string
-	ms                   *storage.MetaStore // Storing snapshots' state, parentage and other metadata
-	fs                   *filesystem.Filesystem
-	cgroupManager        *cgroup.Manager
-	enableNydusOverlayFS bool
-	enableKataVolume     bool
-	syncRemove           bool
-	cleanupOnClose       bool
+	root                     string
+	nydusdPath               string
+	ms                       *storage.MetaStore // Storing snapshots' state, parentage and other metadata
+	fs                       *filesystem.Filesystem
+	cgroupManager            *cgroup.Manager
+	enableNydusOverlayFS     bool
+	nydusOverlayFSBinaryName string
+	enableKataVolume         bool
+	syncRemove               bool
+	cleanupOnClose           bool
 }
 
 func NewSnapshotter(ctx context.Context, cfg *config.SnapshotterConfig) (snapshots.Snapshotter, error) {
@@ -284,15 +285,16 @@ func NewSnapshotter(ctx context.Context, cfg *config.SnapshotterConfig) (snapsho
 	}
 
 	return &snapshotter{
-		root:                 cfg.Root,
-		nydusdPath:           cfg.DaemonConfig.NydusdPath,
-		ms:                   ms,
-		syncRemove:           syncRemove,
-		fs:                   nydusFs,
-		cgroupManager:        cgroupMgr,
-		enableNydusOverlayFS: cfg.SnapshotsConfig.EnableNydusOverlayFS,
-		enableKataVolume:     cfg.SnapshotsConfig.EnableKataVolume,
-		cleanupOnClose:       cfg.CleanupOnClose,
+		root:                     cfg.Root,
+		nydusdPath:               cfg.DaemonConfig.NydusdPath,
+		ms:                       ms,
+		syncRemove:               syncRemove,
+		fs:                       nydusFs,
+		cgroupManager:            cgroupMgr,
+		enableNydusOverlayFS:     cfg.SnapshotsConfig.EnableNydusOverlayFS,
+		nydusOverlayFSBinaryName: cfg.SnapshotsConfig.NydusOverlayFSBinaryName,
+		enableKataVolume:         cfg.SnapshotsConfig.EnableKataVolume,
+		cleanupOnClose:           cfg.CleanupOnClose,
 	}, nil
 }
 
@@ -877,9 +879,16 @@ func (o *snapshotter) mountProxy(ctx context.Context, s storage.Snapshot) ([]mou
 		overlayOptions = append(overlayOptions, options...)
 	}
 	log.G(ctx).Debugf("fuse.nydus-overlayfs mount options %v", overlayOptions)
+
+	mountType := "fuse.nydus-overlayfs"
+	if o.nydusOverlayFSBinaryName != "" {
+		log.G(ctx).Infof("Using custom nydus-overlayfs binary: %s", o.nydusOverlayFSBinaryName)
+		mountType = fmt.Sprintf("fuse.%s", o.nydusOverlayFSBinaryName)
+	}
+
 	mounts := []mount.Mount{
 		{
-			Type:    "fuse.nydus-overlayfs",
+			Type:    mountType,
 			Source:  "overlay",
 			Options: overlayOptions,
 		},

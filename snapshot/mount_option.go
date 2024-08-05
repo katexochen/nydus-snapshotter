@@ -94,9 +94,15 @@ func (o *snapshotter) remoteMountWithExtraOptions(ctx context.Context, s storage
 	opt := fmt.Sprintf("extraoption=%s", base64.StdEncoding.EncodeToString(no))
 	overlayOptions = append(overlayOptions, opt)
 
+	mountType := "fuse.nydus-overlayfs"
+	if o.nydusOverlayFSBinaryName != "" {
+		log.G(ctx).Infof("Using custom nydus-overlayfs binary: %s", o.nydusOverlayFSBinaryName)
+		mountType = fmt.Sprintf("fuse.%s", o.nydusOverlayFSBinaryName)
+	}
+
 	return []mount.Mount{
 		{
-			Type:    "fuse.nydus-overlayfs",
+			Type:    mountType,
 			Source:  "overlay",
 			Options: overlayOptions,
 		},
@@ -136,9 +142,16 @@ func (o *snapshotter) mountWithKataVolume(ctx context.Context, id string, overla
 
 	if hasVolume {
 		log.G(ctx).Debugf("fuse.nydus-overlayfs mount options %v", overlayOptions)
+
+		mountType := "fuse.nydus-overlayfs"
+		if o.nydusOverlayFSBinaryName != "" {
+			log.G(ctx).Infof("Using custom nydus-overlayfs binary: %s", o.nydusOverlayFSBinaryName)
+			mountType = fmt.Sprintf("fuse.%s", o.nydusOverlayFSBinaryName)
+		}
+
 		mounts := []mount.Mount{
 			{
-				Type:    "fuse.nydus-overlayfs",
+				Type:    mountType,
 				Source:  "overlay",
 				Options: overlayOptions,
 			},
